@@ -1,8 +1,17 @@
+#ifdef CACHEQ
+#include "cq.h"   // use cq_malloc()
+#define getTime() cq_nstime()
+#endif
+#ifndef CQ_POOL
+#define CQ_POOL(x)
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <floating_types.h>
+
 
 #include "SWE.h"
 #include "Vec3D.h"
@@ -157,20 +166,20 @@ void SWE_init_bin(char* inputFile, char* testcase, SWE_struct *SWE, fType *S) {
 
   // read in coreolis force, or compute it from formula
 
-  double* tmp = (double *) malloc(sizeof(double) * SWE->NNodes);
-  fread((void*) tmp, sizeof(double), SWE->NNodes, fp_in);
+  double* tmp1 = (double *) malloc(sizeof(double) * SWE->NNodes);
+  fread((void*) tmp1, sizeof(double), SWE->NNodes, fp_in);
   SWE->f = (fType*) malloc(sizeof(fType) * SWE->NNodes);
   if (COMPUTE_FCOR == 1){
 
-    // compute f 
+    // compute f
 
     fType* f = (double *) malloc(sizeof(double) * SWE->NNodes);
     for(int i=0; i<SWE->NNodes; i++){
-      f[i]   =  2.0*Omega*z[i]; 
+      f[i]   =  2.0*Omega*z[i];
       SWE->f[i] = (fType) f[i];
     }
     printf("Computing Coriolis term (f)       ");
-    fType f_del = check_v(tmp, SWE->f, SWE->NNodes);
+    fType f_del = check_v(tmp1, SWE->f, SWE->NNodes);
     if (f_del < _TINY_VAL_){
       printf("...PASS\n");
     }
@@ -185,9 +194,9 @@ void SWE_init_bin(char* inputFile, char* testcase, SWE_struct *SWE, fType *S) {
     // use the f read from the file
 
     for(int i=0; i<SWE->NNodes; i++)
-      SWE->f[i] = (fType) tmp[i];
+      SWE->f[i] = (fType) tmp1[i];
   }
-  free(tmp);
+  free(tmp1);
 
   double* ghm = (double *) malloc(sizeof(double) * SWE->NNodes);
   SWE->ghm = (fType*) malloc(sizeof(fType) * SWE->NNodes);
@@ -262,7 +271,7 @@ void SWE_init_bin(char* inputFile, char* testcase, SWE_struct *SWE, fType *S) {
       }
     }
 
-  } 
+  }
   else{
     for(int i=0; i<3*SWE->NNodes; i++){
       SWE->p_u[i] = (fType) p_u[i];
@@ -279,63 +288,63 @@ void SWE_init_bin(char* inputFile, char* testcase, SWE_struct *SWE, fType *S) {
   free(p_v);
   free(p_w);
 
-  tmp = (double *) malloc(sizeof(double) * SWE->NNodes * 3);
+  double* tmp2 = (double *) malloc(sizeof(double) * SWE->NNodes * 3);
   SWE->gradghm  = (fType*) malloc(sizeof(fType) * SWE->NNodes * 3);
-  fread((void*) tmp, sizeof(double), SWE->NNodes * 3, fp_in);
+  fread((void*) tmp2, sizeof(double), SWE->NNodes * 3, fp_in);
   for(int i = 0; i < 3*SWE->NNodes; i++){
-    SWE->gradghm[i] = (fType) tmp[i];
+    SWE->gradghm[i] = (fType) tmp2[i];
     }
-  free(tmp);
+  free(tmp2);
 
   // allocate and read Derivative Matricess
 
-  tmp    =  (double*) malloc(sizeof(double) * SWE->NNodes * SWE->NNbrs);
+  double* tmp3    =  (double*) malloc(sizeof(double) * SWE->NNodes * SWE->NNbrs);
   SWE->Dx = (fType*) malloc(sizeof(fType) * SWE->NNodes * SWE->NNbrs_Padded);
   SWE->Dy = (fType*) malloc(sizeof(fType) * SWE->NNodes * SWE->NNbrs_Padded);
   SWE->Dz = (fType*) malloc(sizeof(fType) * SWE->NNodes * SWE->NNbrs_Padded);
   SWE->L =  (fType*) malloc(sizeof(fType) * SWE->NNodes * SWE->NNbrs_Padded);
 
-  fread((void*) tmp, sizeof(double), SWE->NNodes * SWE->NNbrs, fp_in);
+  fread((void*) tmp3, sizeof(double), SWE->NNodes * SWE->NNbrs, fp_in);
   for(int i=0; i<SWE->NNodes; i++){
     for(int j=0; j<SWE->NNbrs; j++){
-      SWE->Dx[i*SWE->NNbrs_Padded + j] = (fType) tmp[i*SWE->NNbrs+j]/a;
+      SWE->Dx[i*SWE->NNbrs_Padded + j] = (fType) tmp3[i*SWE->NNbrs+j]/a;
     }
     for(int j=SWE->NNbrs; j<SWE->NNbrs_Padded; j++){
       SWE->Dx[i*SWE->NNbrs_Padded + j] = 0.0;
     }
-  }   
+  }
 
-  fread((void*) tmp, sizeof(double), SWE->NNodes * SWE->NNbrs, fp_in);
+  fread((void*) tmp3, sizeof(double), SWE->NNodes * SWE->NNbrs, fp_in);
   for(int i=0; i<SWE->NNodes; i++){
     for(int j=0; j<SWE->NNbrs; j++){
-      SWE->Dy[i*SWE->NNbrs_Padded + j] = (fType) tmp[i*SWE->NNbrs+j]/a;
+      SWE->Dy[i*SWE->NNbrs_Padded + j] = (fType) tmp3[i*SWE->NNbrs+j]/a;
     }
     for(int j=SWE->NNbrs; j<SWE->NNbrs_Padded; j++){
       SWE->Dy[i*SWE->NNbrs_Padded + j] = 0.0;
     }
-  }   
+  }
 
-  fread((void*) tmp, sizeof(double), SWE->NNodes * SWE->NNbrs, fp_in);
+  fread((void*) tmp3, sizeof(double), SWE->NNodes * SWE->NNbrs, fp_in);
   for(int i=0; i<SWE->NNodes; i++){
     for(int j=0; j<SWE->NNbrs; j++){
-      SWE->Dz[i*SWE->NNbrs_Padded + j] = (fType) tmp[i*SWE->NNbrs+j]/a;
+      SWE->Dz[i*SWE->NNbrs_Padded + j] = (fType) tmp3[i*SWE->NNbrs+j]/a;
     }
     for(int j=SWE->NNbrs; j<SWE->NNbrs_Padded; j++){
       SWE->Dz[i*SWE->NNbrs_Padded + j] = 0.0;
     }
-  }   
+  }
 
-  fread((void*) tmp, sizeof(double), SWE->NNodes * SWE->NNbrs, fp_in);
+  fread((void*) tmp3, sizeof(double), SWE->NNodes * SWE->NNbrs, fp_in);
   for(int i=0; i<SWE->NNodes; i++){
     for(int j=0; j<SWE->NNbrs; j++){
-      SWE->L[i*SWE->NNbrs_Padded + j] = (fType) tmp[i*SWE->NNbrs+j]*gamma;
+      SWE->L[i*SWE->NNbrs_Padded + j] = (fType) tmp3[i*SWE->NNbrs+j]*gamma;
     }
     for(int j=SWE->NNbrs; j<SWE->NNbrs_Padded; j++){
       SWE->L[i*SWE->NNbrs_Padded + j] = 0.0;
     }
-  }   
+  }
 
-  free(tmp);
+  free(tmp3);
 
    // read DM stencil ids (dimensions: NNodes x NNbrs)
 
@@ -384,6 +393,7 @@ void SWE_init_bin(char* inputFile, char* testcase, SWE_struct *SWE, fType *S) {
 	  S[i] = Scomp[i];
 	}
 	free(Scomp);
+	free(Sfile);
 	printf("...PASS\n");
       }
       else{
@@ -416,4 +426,3 @@ void SWE_init_bin(char* inputFile, char* testcase, SWE_struct *SWE, fType *S) {
   printf("\nInitialization complete.\n");
 
 }
-

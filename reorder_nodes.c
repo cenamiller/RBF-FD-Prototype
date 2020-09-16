@@ -37,10 +37,30 @@ int* reorder_1D_int_arr(int* var, int* mapping, int dim1) {
   // return the new variable data
   return mapped_var;
 }
-
+#ifdef CACHEQ
 // reorders any two dimensional integer array to the new mapping (1D mapping must correspond to slowest growing dimension)
-fType* reorder_2D_fp_arr(fType* var, int* mapping, int dim1, int dim1_stride, int dim2) {
+fType CQ_POOL(2)* reorder_2D_fp_arr_fpga(fType CQ_POOL(2)* var, int* mapping, int dim1, int dim1_stride, int dim2) {
   
+  // create space for mapped variable
+  fType CQ_POOL(2)* mapped_var = (fType CQ_POOL(2)*) cq_malloc(2,(sizeof(fType) * dim1 * dim1_stride));
+
+  for (int i = 0; i < dim1; i++) {
+    for (int j = 0; j < dim2; j++) {
+      mapped_var[(i * dim1_stride) + j] = var[(mapping[i] * dim1_stride) + j];
+    }
+  }
+
+  // free memory allocated to the initial variable data
+  free(var);
+
+  // return the new variable data
+  return mapped_var;
+
+}
+#endif
+
+fType* reorder_2D_fp_arr(fType* var, int* mapping, int dim1, int dim1_stride, int dim2) {
+
   // create space for mapped variable
   fType* mapped_var = (fType *) malloc(sizeof(fType) * dim1 * dim1_stride);
 

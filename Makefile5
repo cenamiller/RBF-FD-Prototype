@@ -9,7 +9,7 @@ ifeq ($(COMPILER),gnu)
 	LINKFLAGS = -Wall
 	LIBS = -lm
 else ifeq ($(COMPILER),qcc)
-        CC = /opt/cacheq/qcc/0.7/bin/qcc
+        CC = /opt/cacheq/qcc/0.5/bin/qcc
         CFLAGS = -e RK4_advance 
         INCLUDES = -I include
         LINKFLAGS = -Wall
